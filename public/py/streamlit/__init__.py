@@ -219,14 +219,22 @@ class _Selection(dict):
             raise AttributeError(k)
 
 
+def _same(a, b):
+    a = _clean(a)
+    if isinstance(a, (int, float)) and not isinstance(a, bool) and isinstance(b, (int, float)):
+        return abs(float(a) - float(b)) < 0.005          # 10.0 vs 10
+    return str(a).strip() == str(b).strip()
+
+
 def _find_rows(df, matches):
     pos = []
     for m in matches:
         for i, row in enumerate(df.itertuples(index=False)):
             rd = dict(zip(df.columns, row))
-            if all(str(_clean(rd.get(c))) == str(v) for c, v in m.items()):
+            if i not in pos and all(_same(rd.get(c), v) for c, v in m.items()):
                 pos.append(i)
                 break
+    CONTROL['matched'] = CONTROL.get('matched', 0) + len(pos)
     return pos
 
 

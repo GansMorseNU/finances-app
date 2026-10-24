@@ -133,9 +133,13 @@ def run_dashboard(month=None, press=(), select_match=None, edits=None):
         st.CONTROL.update(month=month, press=set(press), select={},
                           select_match=dict(select_match or {}), edits=list(edits or []),
                           toggles=False)
+        st.CONTROL['matched'] = 0
         g, err, reran = _exec_dashboard()
         action_alerts = _alerts(st.ROOT) + _alerts(st.SIDEBAR)
         action_error = err
+        if select_match and not err and st.CONTROL.get('matched', 0) == 0:
+            action_error = ("Couldn't find that transaction in the current data "
+                            "(it may have changed since the screen was drawn). Nothing was saved.")
     st.reset()
     st.CONTROL.update(month=month, press=set(), select={}, select_match={}, edits=[],
                       toggles=True)
