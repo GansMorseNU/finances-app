@@ -127,9 +127,11 @@ class _Container:
         return False
 
     def __getattr__(self, name):
+        if name.startswith('__'):
+            raise AttributeError(name)
         fn = globals().get(name)
         if fn is None or not callable(fn):
-            raise AttributeError(name)
+            fn = _unknown(name)
 
         def call(*a, **k):
             _stack.append(self._node)
@@ -442,3 +444,18 @@ session_state = _State()
 
 sidebar = _Container(SIDEBAR)
 
+
+
+# ------------------------------------------------------------------ anything else
+def _unknown(name):
+    """Streamlit features this stand-in doesn't know: do nothing, but still work as
+    `with st.something(...):` so a new dashboard feature never breaks the phone."""
+    def f(*a, **k):
+        return _Container(_Node('container'))
+    return f
+
+
+def __getattr__(name):
+    if name.startswith('__'):
+        raise AttributeError(name)
+    return _unknown(name)
