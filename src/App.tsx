@@ -8,6 +8,12 @@ import { mdToHtml } from './lib/md';
 
 const engine = new Engine();
 const REFRESH_LABEL = '🔄 Refresh from Tiller';
+const OFFLINE = 'You’re offline. Refreshing and saving need an internet connection; '
+  + 'the numbers shown are from the last update.';
+/** A failed request because there is no connection (fetch throws a bare TypeError). */
+function isOffline(e: unknown): boolean {
+  return !navigator.onLine || (e instanceof TypeError && /fetch|network|load failed/i.test(e.message));
+}
 
 function monthName(m: string | null) {
   if (!m) return 'Budget';
@@ -79,6 +85,7 @@ export default function App() {
 
   const handle = useCallback((e: unknown) => {
     if (e instanceof dbx.SignInNeeded) { setSignedIn(false); return; }
+    if (isOffline(e)) { setError(OFFLINE); setLog(null); return; }
     setError((e as Error).message || String(e));
   }, []);
 
@@ -122,6 +129,7 @@ export default function App() {
 
   const press = async (labels: string[], selectMatch?: unknown, edits?: unknown) => {
     if (running.current) return false;
+    if (!navigator.onLine) { setError(OFFLINE); setLog(null); return false; }
     running.current = true;
     setError(null); setNotice(null);
     try {
